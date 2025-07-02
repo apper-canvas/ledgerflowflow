@@ -1,21 +1,28 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { toast } from 'react-toastify'
 import Loading from '@/components/ui/Loading'
 import Error from '@/components/ui/Error'
 import Empty from '@/components/ui/Empty'
 import ApperIcon from '@/components/ApperIcon'
+import Button from '@/components/atoms/Button'
+import Input from '@/components/atoms/Input'
 import { customerService } from '@/services/api/customerService'
 import { transactionService } from '@/services/api/transactionService'
+import { reportService } from '@/services/api/reportService'
 import { formatCurrency } from '@/utils/formatters'
-import { format } from 'date-fns'
+import { format, subDays, startOfDay, endOfDay } from 'date-fns'
 
 const Reports = () => {
-  const [customers, setCustomers] = useState([])
+const [customers, setCustomers] = useState([])
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [reportType, setReportType] = useState('outstanding')
-
+  const [generating, setGenerating] = useState(false)
+  const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'))
+  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [reportFormat, setReportFormat] = useState('pdf')
   useEffect(() => {
     loadData()
   }, [])
@@ -89,6 +96,35 @@ const Reports = () => {
   const outstandingCustomers = getOutstandingCustomers()
   const recentTransactions = getRecentTransactions()
 
+const handleGenerateReport = async () => {
+    if (!startDate || !endDate) {
+      toast.error('Please select both start and end dates')
+      return
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      toast.error('Start date cannot be after end date')
+      return
+    }
+
+    setGenerating(true)
+    try {
+      await reportService.generateReport({
+        type: reportType,
+        startDate: startOfDay(new Date(startDate)),
+        endDate: endOfDay(new Date(endDate)),
+        format: reportFormat,
+        customers,
+        transactions
+      })
+      toast.success('Report generated and downloaded successfully!')
+    } catch (err) {
+      toast.error('Failed to generate report. Please try again.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   return (
     <div className="p-6 pb-20">
       {/* Header */}
@@ -97,7 +133,64 @@ const Reports = () => {
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Reports</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Reports</h1>
+        
+        {/* Report Generation Controls */}
+        <div className="card-premium p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Generate Report</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <Input
+              label="Start Date"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              icon="Calendar"
+            />
+            <Input
+              label="End Date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              icon="Calendar"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Report Type</label>
+              <select
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+                className="block w-full px-4 py-3 text-base rounded-xl border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+              >
+                <option value="outstanding">Outstanding Amounts</option>
+                <option value="summary">Business Summary</option>
+                <option value="transactions">Transaction History</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Format</label>
+              <select
+                value={reportFormat}
+                onChange={(e) => setReportFormat(e.target.value)}
+                className="block w-full px-4 py-3 text-base rounded-xl border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+              >
+                <option value="pdf">PDF Document</option>
+              </select>
+            </div>
+          </div>
+
+          <Button
+            onClick={handleGenerateReport}
+            loading={generating}
+            icon="Download"
+            className="w-full md:w-auto"
+            disabled={!startDate || !endDate}
+          >
+            {generating ? 'Generating Report...' : 'Generate Report'}
+          </Button>
+        </div>
         
         {/* Report Type Selector */}
         <div className="flex space-x-2 mb-6">

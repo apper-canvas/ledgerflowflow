@@ -1,5 +1,5 @@
-import React from 'react'
-import { motion } from 'framer-motion'
+import React from "react";
+import { motion } from "framer-motion";
 
 const Loading = ({ type = 'cards' }) => {
   const CardSkeleton = () => (
@@ -57,7 +57,7 @@ const Loading = ({ type = 'cards' }) => {
     </div>
   )
 
-  const renderSkeletons = () => {
+const renderSkeletons = () => {
     switch (type) {
       case 'header':
         return <HeaderSkeleton />
@@ -65,6 +65,21 @@ const Loading = ({ type = 'cards' }) => {
         return Array.from({ length: 5 }, (_, i) => (
           <TransactionSkeleton key={i} />
         ))
+      case 'reports':
+        return (
+          <div className="card-premium p-6 animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-40 mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="h-20 bg-gray-200 rounded-xl"></div>
+              <div className="h-20 bg-gray-200 rounded-xl"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="h-16 bg-gray-200 rounded-xl"></div>
+              <div className="h-16 bg-gray-200 rounded-xl"></div>
+            </div>
+            <div className="h-12 bg-gray-200 rounded-xl w-full md:w-48"></div>
+          </div>
+        )
       case 'cards':
       default:
         return Array.from({ length: 6 }, (_, i) => (

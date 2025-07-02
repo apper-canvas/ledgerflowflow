@@ -28,11 +28,21 @@ class TransactionService {
       .sort((a, b) => new Date(b.date) - new Date(a.date))
   }
 
-  async getRecent(limit = 10) {
+async getRecent(limit = 10) {
     await delay(200)
     return [...this.transactions]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, limit)
+  }
+
+  async getByDateRange(startDate, endDate) {
+    await delay(300)
+    return [...this.transactions]
+      .filter(t => {
+        const transactionDate = new Date(t.date)
+        return transactionDate >= startDate && transactionDate <= endDate
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
   }
 
   async create(transactionData) {
